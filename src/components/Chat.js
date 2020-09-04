@@ -4,8 +4,6 @@ import MessagesList from "./MessagesList";
 import ChatActionsManager from "../helpers/ChatActions";
 import SocketManager from "../helpers/SocketManager";
 import Constant from "../helpers/Constant";
-import * as io from "socket.io-client";
-const socket = null;
 
 class Chat extends Component {
     constructor(props) {
@@ -37,31 +35,20 @@ class Chat extends Component {
             console.log("Error loading history. More info: "+ err);
         });
 
-        this.socket = io(Constant.ENDPOINT);
-        this.socket.on("connect", () => {
-            console.log("Socket connection established...");
-        });
-        this.socket.on("message", (message) => {
+        SocketManager.catchNewMessage(message => {
             this.setState(state => {
                 const newMessagesList = state.messages.concat(message);
                 return {
                     messages: newMessagesList
                 }
             });
-            console.log("message from socket: ");
-            console.log(this.state.messages);
             this.renderMessageList(this.state.messages);
         })
-        this.socket.on("disconnect", () => {
-            console.log("Socket connection disconnected...");
-            this.socket.open();
-        });
-
     }
 
     handleClick = () => {
         const { name, text } = this.state.currentMessage;
-        this.socket.emit("message", {name, text});
+        SocketManager.emitMessage({name, text});
     }
 
     handleChangeName = (e) => {
@@ -90,9 +77,7 @@ class Chat extends Component {
                 onChangeMessage={this.handleChangeMessage}
                 handleSendEvent={this.handleClick}></MessageField>
                 {this.renderMessageList(this.state.messages)}
-                
             </div>
-            
         )
     }
 }
